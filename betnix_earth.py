@@ -247,6 +247,43 @@ if __name__ == "__main__":
     
     tile_img = get_tile_image(x, y, zoom)
     if tile_img:
-        tile_img.show()  # Opens the tile in default image viewer
+        tile_img.show() 
+    # Opens the tile in default image viewer
+def latlon_to_tile(lat, lon, zoom):
+    n = 2 ** zoom
+    xtile = int((lon + 180.0) / 360.0 * n)
+    ytile = int((1.0 - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat))) / math.pi) / 2.0 * n)
+    return xtile, ytile
+
+def fetch_tile_texture(x, y, z):
+    url = f"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    img = Image.open(BytesIO(r.content)).convert("RGB")
+    tex_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, tex_id)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img.tobytes())
+    return tex_id
+
+def draw_tile(tex_id, x0, y0, x1, y1):
+    glBindTexture(GL_TEXTURE_2D, tex_id)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0,0); glVertex2f(x0,y0)
+    glTexCoord2f(1,0); glVertex2f(x1,y0)
+    glTexCoord2f(1,1); glVertex2f(x1,y1)
+    glTexCoord2f(0,1); glVertex2f(x0,y1)
+    glEnd()
+    glDeleteTextures(tex_id)
+
+# Example usage:
+zoom = 3
+lat, lon = 0, 0
+x, y = latlon_to_tile(lat, lon, zoom)
+tex_id = fetch_tile_texture(x, y, zoom)
+if tex_id:
+    draw_tile(tex_id, -10, -10, 10, 10)
 
 if __name__ == "__main__": main()
