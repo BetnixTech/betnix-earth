@@ -1,0 +1,19 @@
+# Ignore all downloaded tiles
+tiles/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore virtual environment folders (if you use venv)
+venv/
+env/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Optional: ignore editor configs
+.vscode/
+.idea/
