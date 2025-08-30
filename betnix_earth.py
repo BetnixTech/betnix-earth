@@ -1,7 +1,9 @@
 # Betnix Earth – Full Single File Python
 # Requires: Python 3, PyOpenGL, Pygame, Pillow
 # Betnix Earth Satilite Imagery
-
+import requests
+from PIL import Image
+from io import BytesIO
 import os, json, math
 import pygame
 from pygame.locals import *
@@ -217,5 +219,34 @@ def main():
         "grass": [{"lat": g[0], "lon": g[1]} for g in grass],
         "buildings": [{"lat": b[0], "lon": b[1], "height": b[2]} for b in buildings]
     })
+
+def latlon_to_tile(lat, lon, zoom):
+    """Convert latitude/longitude to tile x, y coordinates."""
+    n = 2 ** zoom
+    xtile = int((lon + 180.0) / 360.0 * n)
+    ytile = int((1.0 - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat))) / math.pi) / 2.0 * n)
+    return xtile, ytile
+
+def get_tile_image(x, y, z):
+    """Fetch a tile image from OSM without saving to disk."""
+    url = f"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    response = requests.get(url)
+    if response.status_code == 200:
+        img = Image.open(BytesIO(response.content))
+        return img
+    else:
+        print(f"Failed to fetch tile {z}/{x}/{y}")
+        return None
+
+# Example usage
+if __name__ == "__main__":
+    # Coordinates for San Francisco, for example
+    lat, lon = 37.7749, -122.4194
+    zoom = 10
+    x, y = latlon_to_tile(lat, lon, zoom)
+    
+    tile_img = get_tile_image(x, y, zoom)
+    if tile_img:
+        tile_img.show()  # Opens the tile in default image viewer
 
 if __name__ == "__main__": main()
